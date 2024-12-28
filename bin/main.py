@@ -139,7 +139,7 @@ class MainApp(tk.Tk):
         self.__password = self.var_pass.get()
         self.__password_confirm = self.var_pass_confirm.get()
         if(self.__password == self.__password_confirm and (self.__file_2FA != None and self.__file_2FA != ())):
-            if((self.__filepath != None or self.__dirpath != None) or ((self.__filepath != None or self.__dirpath != None))):
+            if((self.__filepath != None and self.__filepath != ()) and ((self.__dirpath != None and self.__dirpath != ()))):
                 try:
                     md5_user = md5()
                     md5_user.update(self.__password.encode('utf-8'))
