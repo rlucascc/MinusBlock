@@ -16,17 +16,17 @@ class MainApp(tk.Tk):
         self.resizable(width=False, height=False)
 
         # ARQUIVO E DIRETÓRIO PARA ENCRIPTAÇÃO E DECRIPTAÇÃO
-        self.__filepath = ''
-        self.__dirpath  = ''
+        self.__filepath = None
+        self.__dirpath  = None
         self.__file_2FA = None
 
-        self.__filepath_decrip = ''
+        self.__filepath_decrip = None
         self.__file_2FA_decrip = None
 
         # SENHAS PARA CRIAÇÃO DE HASH
-        self.__password = ''
-        self.__password_confirm = ''
-        self.__password_dcrip = ''
+        self.__password = None
+        self.__password_confirm = None
+        self.__password_dcrip = None
 
         # FRAME DE ENCRIPTAÇÃO -----------------------------------------------------------------------------------------
         self.frame_encript = tk.Frame(self, width=490, height=240, borderwidth=1, relief='solid')
@@ -122,15 +122,15 @@ class MainApp(tk.Tk):
 
     def escolher_arquivo_2FA(self):
         self.__file_2FA = filedialog.askopenfilename()
-        if(self.__file_2FA == () or self.__file_2FA == ''):
-            messagebox.showinfo(title='ARQUIVO NÃO ESCOLHIDO', message='Erro na escolha do arquivo.')
+        if(self.__file_2FA == () or self.__file_2FA == None):
+            messagebox.showerror(title='ARQUIVO NÃO ESCOLHIDO', message='Erro na escolha do arquivo.')
         else:
             messagebox.showinfo(title='ARQUIVO ESCOLHIDO', message=self.__file_2FA)
 
     def escolher_arquivo_2FA_decrip(self):
         self.__file_2FA_decrip = filedialog.askopenfilename()
-        if(self.__file_2FA_decrip == () or self.__file_2FA_decrip == ''):
-            messagebox.showinfo(title='ARQUIVO NÃO ESCOLHIDO', message='Erro na escolha do arquivo.')
+        if(self.__file_2FA_decrip == () or self.__file_2FA_decrip == None):
+            messagebox.showerror(title='ARQUIVO NÃO ESCOLHIDO', message='Erro na escolha do arquivo.')
         else:
             messagebox.showinfo(title='ARQUIVO ESCOLHIDO', message=self.__file_2FA_decrip)
 
@@ -139,16 +139,50 @@ class MainApp(tk.Tk):
         self.__password = self.var_pass.get()
         self.__password_confirm = self.var_pass_confirm.get()
         if(self.__password == self.__password_confirm and (self.__file_2FA != None and self.__file_2FA != ())):
-            print('TUDO CERTO')
+            if((self.__filepath != None or self.__dirpath != None) or ((self.__filepath != None or self.__dirpath != None))):
+                try:
+                    md5_user = md5()
+                    md5_user.update(self.__password.encode('utf-8'))
+                    half_user = md5_user.hexdigest()
+
+                    md5_file = md5()
+                    with open(self.__file_2FA, 'rb') as a:
+                        bin_file = a.read()
+
+                    md5_file.update(bin_file)
+                    half_file = md5_file.hexdigest()
+
+                    return half_user[16:] + half_file[:16]
+                except Exception as e:
+                    messagebox.showerror(title='FATAL ERROR' ,message=f'{e}')
+            else:
+                messagebox.showerror(title='ERRO',message='Erro na tentativa de encriptação.\nVerifique o arquivo ou o diretório escolhidos.')
         else:
-            print('ALGUM ERRO')
+            messagebox.showerror(title='ERRO', message='Erro na tentativa de encriptação.\nVerifique a senha ou o arquivo 2FA escolhido.')
 
     def criar_hash_decrip(self):
         self.__password_dcrip = self.var_pass_dcrip.get()
-        if(self.__password_dcrip != '' and (self.__file_2FA_decrip != None and self.__file_2FA_decrip != ())):
-            print('TUDO CERTO')
+        if(self.__password_dcrip != None and (self.__file_2FA_decrip != None and self.__file_2FA_decrip != ())):
+            if(self.__filepath_decrip != None and self.__filepath_decrip != ()):
+                try:
+                    md5_user = md5()
+                    md5_user.update(self.__password_dcrip.encode('utf-8'))
+                    half_user = md5_user.hexdigest()
+
+                    md5_file = md5()
+                    with open(self.__file_2FA_decrip, 'rb') as a:
+                        bin_file = a.read()
+
+                    md5_file.update(bin_file)
+                    half_file = md5_file.hexdigest()
+
+                    return print(half_user[16:] + half_file[:16])
+                except Exception as e:
+                    messagebox.showerror(title='FATAL ERROR', message=f'{e}')
+            else:
+                messagebox.showerror(title='ERRO',message='Erro na tentativa de decriptação.\nVerifique o arquivo escolhido.')
         else:
-            print('ALGUM ERRO')
+            messagebox.showerror(title='ERRO', message='Erro na tentativa decriptação.\nVerifique a senha ou o arquivo 2FA escolhido.')
 
     def encryptar_arquivo(self, input, output, senha_final):
         salt = os.urandom(16)
