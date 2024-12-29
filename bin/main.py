@@ -72,7 +72,7 @@ class MainApp(tk.Tk):
 
         self.btn_arquivo_cript = tk.Button(self.frame_encript, text='ARQUIVO\n2FA', command=self.escolher_arquivo_2FA).place(x=350, y=115)
 
-        self.btn_encript= tk.Button(self.frame_encript, text='ENCRIPTAR', command=self.criar_hash_encrip).place(x=205, y=190)
+        self.btn_encript= tk.Button(self.frame_encript, text='ENCRIPTAR', command=self.encryptar_arquivo).place(x=205, y=190)
 
 
         # FRAME DE DECRIPTAÇÃO -----------------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ class MainApp(tk.Tk):
         self.btn_arquivo_dcrip = tk.Button(self.frame_decript, text='ARQUIVO\n2FA', command=self.escolher_arquivo_2FA_decrip).place(x=350, y=70)
 
 
-        self.btn_decript = tk.Button(self.frame_decript, text='DECRIPTAR', command=self.criar_hash_decrip).place(x=205, y=190)
+        self.btn_decript = tk.Button(self.frame_decript, text='DECRIPTAR', command=self.decriptar_arquivo).place(x=205, y=190)
 
 
 
@@ -152,7 +152,7 @@ class MainApp(tk.Tk):
                     md5_file.update(bin_file)
                     half_file = md5_file.hexdigest()
 
-                    return half_user[16:] + half_file[:16]
+                    return str(half_user[16:] + half_file[:16])
                 except Exception as e:
                     messagebox.showerror(title='FATAL ERROR' ,message=f'{e}')
             else:
@@ -162,7 +162,7 @@ class MainApp(tk.Tk):
 
     def criar_hash_decrip(self):
         self.__password_dcrip = self.var_pass_dcrip.get()
-        if(self.__password_dcrip != None and (self.__file_2FA_decrip != None and self.__file_2FA_decrip != ())):
+        if((self.__password_dcrip != None and self.__password_dcrip != '') and (self.__file_2FA_decrip != None and self.__file_2FA_decrip != ())):
             if(self.__filepath_decrip != None and self.__filepath_decrip != ()):
                 try:
                     md5_user = md5()
@@ -176,7 +176,7 @@ class MainApp(tk.Tk):
                     md5_file.update(bin_file)
                     half_file = md5_file.hexdigest()
 
-                    return print(half_user[16:] + half_file[:16])
+                    return str(half_user[16:] + half_file[:16])
                 except Exception as e:
                     messagebox.showerror(title='FATAL ERROR', message=f'{e}')
             else:
@@ -184,24 +184,33 @@ class MainApp(tk.Tk):
         else:
             messagebox.showerror(title='ERRO', message='Erro na tentativa decriptação.\nVerifique a senha ou o arquivo 2FA escolhido.')
 
-    def encryptar_arquivo(self, input, output, senha_final):
+    def encryptar_arquivo(self):
+        file = self.__filepath
+        dir = self.__dirpath
+        senha_final = self.criar_hash_encrip()
+
         salt = os.urandom(16)
         chave_PBKDF2 = PBKDF2(senha_final.encode(), salt, dkLen=32)
 
         cifra_AES = AES.new(chave_PBKDF2, AES.MODE_CBC)
         vetor = cifra_AES.iv
 
-        with open(input, 'rb') as arquivo:
+        with open(file, 'rb') as arquivo:
             texto_bin = arquivo.read()
 
         arquivo_encriptado = cifra_AES.encrypt(pad(texto_bin, AES.block_size))
 
-        with open(output, 'wb') as f:
-            f.write(salt + vetor + arquivo_encriptado)
+        try:
+            arquivo_final =  open(dir+'/MinusBlockArquive.bin', 'wb')
+            arquivo_final.write(salt + vetor + arquivo_encriptado)
+        except Exception as e:
+            messagebox.showerror(title='ERRO', message=f'{e}')
 
+    def decriptar_arquivo(self):
+        file = self.__filepath_decrip
+        senha_final = self.criar_hash_decrip()
 
-    def decriptar_arquivo(self, input, senha_final):
-        with open(input, 'rb') as arquivo:
+        with open(file, 'rb') as arquivo:
             salt = arquivo.read(16)
             vetor = arquivo.read(16)
             texto_encriptado = arquivo.read()
@@ -211,7 +220,7 @@ class MainApp(tk.Tk):
         cifra_AES = AES.new(chave_PBKDF2, AES.MODE_CBC, vetor)
         arquivo_decriptografado = unpad(cifra_AES.decrypt(texto_encriptado), AES.block_size)
 
-        with open(input, 'wb') as f:
+        with open(file, 'wb') as f:
             f.write(arquivo_decriptografado)
 
 if __name__ == '__main__':
